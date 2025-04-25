@@ -5,12 +5,15 @@ from google import genai
 from google.genai import types
 from PIL import Image
 from io import BytesIO
+import pkg_resources
+import PIL
 
 # ─── PAGE SETUP ─────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Kids’ Visionboard Generator",
     layout="centered",
-    page_icon="📖"
+    page_icon="📖",
+    initial_sidebar_state="collapsed"
 )
 st.title("📖 Kids’ Visionboard Generator")
 
@@ -150,6 +153,37 @@ if pages:
         )
 else:
     st.info("Please complete steps 1–3 above (and enter a custom theme if you chose ‘Custom’).")
+
+# ─── SIDEBAR ─────────────────────────────────────────────────────────────────
+
+st.sidebar.title("ℹ️ About This App")
+st.sidebar.markdown("""
+    **Kids’ Visionboard Generator** turns a single photo and name into a playful, Pixar-style storyboard.  
+    Upload your child’s photo, pick (or type) a theme, and watch custom illustrations come to life—then download each one instantly!
+""")
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📦 Library Versions")
+st.sidebar.markdown(f"🔹 **Streamlit**: {st.__version__}")
+st.sidebar.markdown(f"🔹 **google-genai**: {pkg_resources.get_distribution('google-genai').version}")
+st.sidebar.markdown(f"🔹 **Pillow**: {PIL.__version__}")
+
+st.sidebar.markdown("---")
+st.sidebar.title("💡 Tips for Best Results")
+st.sidebar.markdown("""
+- Upload a clear, front-facing photo  
+- Use a simple, short name (e.g. “Lily”)  
+- Choose a theme or get creative with your own  
+- Wait for all illustrations to finish rendering before downloading  
+""")
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("""
+Have feedback or ideas? [Reach out!](mailto:anubhav.verma360@gmail.com) 😊
+""", unsafe_allow_html=True)
+
+st.sidebar.caption("Disclaimer: This app is for entertainment and creative inspiration. Images are AI-generated and may not be 100% accurate.")
+
 
 # ─── FOOTER ─────────────────────────────────────────────────────────────────
 st.markdown("""
