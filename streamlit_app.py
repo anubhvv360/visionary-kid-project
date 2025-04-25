@@ -1,56 +1,87 @@
-import streamlit as st
-from openai import OpenAI
+# app.py
 
-# Show title and description.
-st.title("💬 Chatbot")
-st.write(
-    "This is a simple chatbot that uses OpenAI's GPT-3.5 model to generate responses. "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
-    "You can also learn how to build this app step by step by [following our tutorial](https://docs.streamlit.io/develop/tutorials/llms/build-conversational-apps)."
+import os
+import streamlit as st
+from google import genai
+from google.genai import types
+from PIL import Image
+from io import BytesIO
+
+# ─── CONFIG ─────────────────────────────────────────────────────────────────────
+# Make sure you’ve set your Gemini API key in the environment:
+#   export GOOGLE_API_KEY="YOUR_KEY"
+genai_client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+
+# ─── PAGE SETUP ─────────────────────────────────────────────────────────────────
+st.set_page_config(page_title="Kids’ Storybook Generator", layout="centered", page_icon="🐥")
+st.title("📖 Kids’ Storybook Generator")
+
+# ─── USER INPUT ─────────────────────────────────────────────────────────────────
+uploaded_file = st.file_uploader(
+    "Upload a photo of your kid",
+    type=["png", "jpg", "jpeg"],
+    help="We'll use this as the face reference for all drawings."
 )
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = st.text_input("OpenAI API Key", type="password")
-if not openai_api_key:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝️")
-else:
+name = st.text_input("What’s your kid’s name?", placeholder="e.g. Sheldon")
 
-    # Create an OpenAI client.
-    client = OpenAI(api_key=openai_api_key)
+# Define the available themes
+THEMES = {
+    "Different Professions": [
+        f"{name} the doctor",
+        f"{name} the pilot",
+        f"{name} the firefighter",
+        f"{name} the scientist",
+    ],
+    "Value-Based Adventures": [
+        f"{name} cleaning their play area",
+        f"{name} helping an elder cross the street",
+        f"{name} sharing toys with a friend",
+    ],
+    "Cultural Landmarks": [
+        f"{name} at the Pyramids of Egypt",
+        f"{name} at the Taj Mahal, India",
+        f"{name} at the Eiffel Tower, France",
+    ],
+}
 
-    # Create a session state variable to store the chat messages. This ensures that the
-    # messages persist across reruns.
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+theme_choice = st.selectbox("Choose a story theme", [""] + list(THEMES.keys()))
 
-    # Display the existing chat messages via `st.chat_message`.
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-    # Create a chat input field to allow the user to enter a message. This will display
-    # automatically at the bottom of the page.
-    if prompt := st.chat_input("What is up?"):
-
-        # Store and display the current prompt.
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        # Generate a response using the OpenAI API.
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
+# ─── GENERATION FUNCTION ────────────────────────────────────────────────────────
+def generate_story_pages(name: str, image_bytes: bytes, prompts: list[str]):
+    pages = []
+    for desc in prompts:
+        prompt = (
+            "Create a single-page, full-color, cartoon-style illustration "
+            f"of a child in the uploaded photo doing the following: {desc}. "
+            "Return only the image (no extra text)."
         )
+        # Multi-modal generate: text+image → we only request IMAGE here
+        response = genai_client.models.generate_content(
+            model="gemini-2.0-flash-exp-image-generation",
+            contents=prompt,
+            config=types.GenerateContentConfig(response_modalities=["IMAGE"])
+        )
+        # Extract the first inline image part
+        for part in response.candidates[0].content.parts:
+            if part.inline_data is not None:
+                img = Image.open(BytesIO(part.inline_data.data))
+                pages.append((desc, img))
+                break
+    return pages
 
-        # Stream the response to the chat using `st.write_stream`, then store it in 
-        # session state.
-        with st.chat_message("assistant"):
-            response = st.write_stream(stream)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+# ─── MAIN ───────────────────────────────────────────────────────────────────────
+if uploaded_file and name and theme_choice:
+    st.success(f"Ready to create your “{theme_choice}” story for {name}!")
+    if st.button("Generate Story Pages"):
+        with st.spinner("Generating images… this may take a minute"):
+            image_bytes = uploaded_file.read()
+            prompts = THEMES[theme_choice]
+            story_pages = generate_story_pages(name, image_bytes, prompts)
+        st.balloons()
+        for i, (caption, img) in enumerate(story_pages, start=1):
+            st.subheader(f"Page {i}: {caption}")
+            st.image(img, use_column_width=True)
+
+else:
+    st.info("Upload a photo, enter your kid’s name and pick a theme to get started.")
