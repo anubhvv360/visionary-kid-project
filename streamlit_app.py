@@ -2,8 +2,8 @@
 
 import os
 import streamlit as st
-from google import genai
-from google.genai import types
+import google.generativeai as genai
+from google.generativeai import types
 from PIL import Image
 from io import BytesIO
 
@@ -15,6 +15,9 @@ st.title("📖 Kids’ Storybook Generator")
 # Make sure you’ve set your Gemini API key in the environment:
 #   export GOOGLE_API_KEY="YOUR_KEY"
 genai_client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+
+# initialize from your Streamlit secrets
+#genai.api_key = st.secrets["GOOGLE_API_KEY"]
 
 # ─── USER INPUT ─────────────────────────────────────────────────────────────────
 uploaded_file = st.file_uploader(
