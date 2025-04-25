@@ -21,8 +21,8 @@ genai_client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
 uploaded_file = st.file_uploader(
     "1️⃣ Upload a photo of your kid",
     type=["png", "jpg", "jpeg"],
+    st.caption = ("Images uploaded are not saved, the AI model only extracts the features for one active session.")
 )
-st.caption = ("Images uploaded are not saved, the AI model only extracts the features for one active session.")
 name = st.text_input("2️⃣ What’s your kid’s name?", placeholder="e.g. Robert")
 
 builtin = ["Different Professions", "Value-Based Adventures", "Cultural Landmarks"]
