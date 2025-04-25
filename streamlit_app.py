@@ -109,25 +109,6 @@ def generate_story_pages(image_bytes: bytes, prompts: list[str]):
 
     return pages
 
-# ─── MAIN LOGIC ─────────────────────────────────────────────────────────────────
-if uploaded_file and name and (theme_choice in builtin or custom_theme):
-    theme = custom_theme if theme_choice == "Custom" else theme_choice
-
-    if st.button("🖼️ Generate Story Pages"):
-        with st.spinner("⏳ Generating scenarios…"):
-            prompts = generate_scenarios(theme, name)
-
-        with st.spinner("🖌️ Rendering illustrations…"):
-            raw = uploaded_file.read()
-            story_pages = generate_story_pages(raw, prompts)
-
-        st.balloons()
-        for i, (caption, img) in enumerate(story_pages, start=1):
-            st.subheader(f"Page {i}: {caption}")
-            st.image(img, use_container_width=True)
-else:
-    st.info("Please complete steps 1–3 above (and enter a custom theme if you chose ‘Custom’).")
-
 def create_storybook_pdf(name: str, theme: str, story_pages: list[tuple[str, Image.Image]]):
     """
     Returns a BytesIO buffer containing a ready-to-print PDF
@@ -205,15 +186,37 @@ def create_storybook_pdf(name: str, theme: str, story_pages: list[tuple[str, Ima
     buf.seek(0)
     return buf
 
+# ─── MAIN LOGIC ─────────────────────────────────────────────────────────────────
+if uploaded_file and name and (theme_choice in builtin or custom_theme):
+    theme = custom_theme if theme_choice == "Custom" else theme_choice
+
+    if st.button("🖼️ Generate Story Pages"):
+        # 1️⃣ Generate scenarios & images
+        with st.spinner("⏳ Generating scenarios…"):
+            prompts = generate_scenarios(theme, name)
+        with st.spinner("🖌️ Rendering illustrations…"):
+            raw = uploaded_file.read()
+            story_pages = generate_story_pages(raw, prompts)
+
+        st.balloons()
+        # 2️⃣ Display each page
+        for i, (caption, img) in enumerate(story_pages, start=1):
+            st.subheader(f"Page {i}: {caption}")
+            st.image(img, use_container_width=True)
+#else:
+#    st.info("Please complete steps 1–3 above (and enter a custom theme if you chose ‘Custom’).")
+
 # ─── USAGE ──────────────────────────────────────────────────────────────────────
 # after you have `story_pages` and have displayed them:
-pdf_buffer = create_storybook_pdf(name, theme, story_pages)
-st.download_button(
-    label="📖 Download Complete Storybook (PDF)",
-    data=pdf_buffer,
-    file_name=f"{name}_{theme.replace(' ', '_')}_storybook.pdf",
-    mime="application/pdf",
-)
+        pdf_buffer = create_storybook_pdf(name, theme, story_pages)
+        st.download_button(
+            label="📖 Download Complete Storybook (PDF)",
+            data=pdf_buffer,
+            file_name=f"{name}_{theme.replace(' ', '_')}_storybook.pdf",
+            mime="application/pdf",
+        )
+else:
+    st.info("Please complete steps 1–3 above (and enter a custom theme if you chose ‘Custom’).")
 
 st.markdown("""
     <style>
