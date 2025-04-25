@@ -1,19 +1,41 @@
-# 💬 Chatbot template
+# 📖 Kids’ Visionboard Generator
 
-A simple Streamlit app that shows how to build a chatbot using OpenAI's GPT-3.5.
+A fun, interactive Streamlit app that turns a child’s photo and name into a personalized vision‐board storybook. Powered by Google’s Gemini multimodal models via the `google-genai` SDK, this tool:
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://chatbot-template.streamlit.app/)
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://visionary-kid.streamlit.app/)
 
-### How to run it on your own machine
+- **Inputs** a kid’s photo (PNG/JPG) and name  
+- **Dynamically generates** 8 themed “scenario” prompts  
+- **Renders** custom Pixar-style, face-matched illustrations  
+- **Displays** each page in a square format  
+- **Lets parents download** individual pages with one-click buttons  
+- **Delivers** playful UI feedback with baloons
 
-1. Install the requirements
+---
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+## 🚀 Features
 
-2. Run the app
+- **Custom themes**  
+  - Built-in: Professions, Value-based adventures, Cultural landmarks  
+  - **Custom**: Type any theme (e.g. “Underwater Exploration”)  
+- **Realism guardrails** ensure logical consistency (e.g., scuba gear underwater)  
+- **Session persistence** so pages stay visible even after downloads  
+- **Per-image downloads**—no bulky ZIPs or PDFs required  
+- **Interactive toasts** (“So cute, that’s a lovely name!”) when you upload a photo or enter a name  
+- **Animated footer** crediting the creator
 
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+---
+
+## 📋 Requirements
+
+- Python 3.8+  
+- Streamlit > 1.12  
+- `google-genai` >= 1.12.1  
+- Pillow  
+
+Add to your `requirements.txt`:
+
+```txt
+streamlit
+google-genai>=1.12.1
+Pillow
