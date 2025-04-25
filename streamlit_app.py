@@ -120,7 +120,7 @@ if uploaded_file and name and (theme_choice in builtin or custom_theme):
     if st.button("🖼️ Generate Story Pages"):
         with st.spinner("⏳ Generating scenarios…"):
             prompts = generate_scenarios(theme, name)
-        with st.spinner("🖌️ Rendering illustrations…"):
+        with st.spinner("⏳ Generating scenarios and rendering illustrations…"):
             raw = uploaded_file.read()
             story_pages = generate_story_pages(raw, prompts)
 
@@ -128,6 +128,8 @@ if uploaded_file and name and (theme_choice in builtin or custom_theme):
         st.session_state.story_pages = story_pages
         st.session_state.saved_name = name
         st.session_state.saved_theme = theme
+
+        st.balloons()
 
 # ─── DISPLAY & DOWNLOAD ─────────────────────────────────────────────────────────
 pages = st.session_state.story_pages
