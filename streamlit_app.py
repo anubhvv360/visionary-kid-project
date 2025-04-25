@@ -18,7 +18,6 @@ name = st.text_input("What’s your kid’s name?", placeholder="e.g. Robert")
 
 THEMES = {
     "Different Professions": [f"{name} the doctor", f"{name} the pilot", ...],
-    ...
 }
 
 theme_choice = st.selectbox("Choose a story theme", [""] + list(THEMES.keys()))
