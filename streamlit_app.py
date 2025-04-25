@@ -5,6 +5,11 @@ from google import genai
 from google.genai import types
 from PIL import Image
 from io import BytesIO
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.lib.utils import ImageReader
+
 
 # ─── PAGE SETUP ─────────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -122,6 +127,93 @@ if uploaded_file and name and (theme_choice in builtin or custom_theme):
             st.image(img, use_container_width=True)
 else:
     st.info("Please complete steps 1–3 above (and enter a custom theme if you chose ‘Custom’).")
+
+def create_storybook_pdf(name: str, theme: str, story_pages: list[tuple[str, Image.Image]]):
+    """
+    Returns a BytesIO buffer containing a ready-to-print PDF
+    with a cover, story pages, and back cover.
+    """
+    # Map themes to soft background colors
+    theme_colors = {
+        "Different Professions": colors.lightgrey,
+        "Value-Based Adventures": colors.lightgreen,
+        "Cultural Landmarks": colors.lightgoldenrodyellow,
+    }
+    bg = theme_colors.get(theme, colors.lightpink)
+
+    buf = BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    w, h = A4
+    margin = 40
+
+    # ─── Cover Page ────────────────────────────────────────────────────────────────
+    c.setFillColor(bg)
+    c.rect(0, 0, w, h, stroke=0, fill=1)
+
+    c.setFont("Helvetica-Bold", 36)
+    c.setFillColor(colors.white)
+    c.drawCentredString(w/2, h*0.65, f"{name}’s {theme} Storybook")
+
+    # Optionally, show a thumbnail of the first illustration
+    if story_pages:
+        _, first_img = story_pages[0]
+        thumb_buf = BytesIO()
+        first_img.save(thumb_buf, format="PNG")
+        thumb_buf.seek(0)
+        reader = ImageReader(thumb_buf)
+        # Draw at half width, centered
+        tw = w * 0.5
+        th = tw
+        c.drawImage(reader, (w-tw)/2, h*0.3, tw, th, preserveAspectRatio=True)
+
+    c.showPage()
+
+    # ─── Story Pages ───────────────────────────────────────────────────────────────
+    for idx, (caption, img) in enumerate(story_pages, start=1):
+        # white background
+        c.setFillColor(colors.white)
+        c.rect(0, 0, w, h, stroke=0, fill=1)
+
+        # draw the square image centered, leaving room for caption
+        img_buf = BytesIO()
+        img.convert("RGB").save(img_buf, format="PNG")
+        img_buf.seek(0)
+        reader = ImageReader(img_buf)
+
+        # compute size: fit into top 80% of page
+        max_size = min(w - 2*margin, h*0.8 - margin)
+        img_x = (w - max_size) / 2
+        img_y = h*0.2
+        c.drawImage(reader, img_x, img_y, max_size, max_size, preserveAspectRatio=True)
+
+        # caption area
+        c.setFont("Helvetica-Oblique", 14)
+        c.setFillColor(colors.darkblue)
+        c.drawCentredString(w/2, img_y - 20, caption)
+
+        c.showPage()
+
+    # ─── Back Cover ────────────────────────────────────────────────────────────────
+    c.setFillColor(bg)
+    c.rect(0, 0, w, h, stroke=0, fill=1)
+    c.setFont("Helvetica", 16)
+    c.setFillColor(colors.white)
+    c.drawCentredString(w/2, h/2, "Made with ❤️ by Anubhav Verma")
+    c.showPage()
+
+    c.save()
+    buf.seek(0)
+    return buf
+
+# ─── USAGE ──────────────────────────────────────────────────────────────────────
+# after you have `story_pages` and have displayed them:
+pdf_buffer = create_storybook_pdf(name, theme, story_pages)
+st.download_button(
+    label="📖 Download Complete Storybook (PDF)",
+    data=pdf_buffer,
+    file_name=f"{name}_{theme.replace(' ', '_')}_storybook.pdf",
+    mime="application/pdf",
+)
 
 st.markdown("""
     <style>
