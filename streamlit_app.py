@@ -21,17 +21,14 @@ genai_client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
 uploaded_file = st.file_uploader(
     "1️⃣ Upload a photo of your kid",
     type=["png", "jpg", "jpeg"],
-    help="We'll use this as the face reference for all drawings."
 )
-name = st.text_input("2️⃣ What’s your kid’s name?", placeholder="e.g. Bunny")
+name = st.text_input("2️⃣ What’s your kid’s name?", placeholder="e.g. Robert")
 
-# ─── THEME SELECTION ────────────────────────────────────────────────────────────
 builtin = ["Different Professions", "Value-Based Adventures", "Cultural Landmarks"]
 theme_choice = st.selectbox(
     "3️⃣ Choose a story theme",
     ["Select…"] + builtin + ["Custom"]
 )
-
 custom_theme = ""
 if theme_choice == "Custom":
     custom_theme = st.text_input(
@@ -46,16 +43,12 @@ def generate_scenarios(theme: str, name: str, count: int = 8) -> list[str]:
         f"under the theme “{theme}”. Each scenario should look like “{name} the pilot in a biplane”.\n"
         "Separate each scenario on its own line."
     )
-
     resp = genai_client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.0-flash-exp",
         contents=[prompt],
         config=types.GenerateContentConfig(response_modalities=["TEXT"])
     )
-
-    # Reconstruct the full text from parts
     text = "".join(part.text or "" for part in resp.candidates[0].content.parts)
-    # Split into lines, strip bullets/numbers
     lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
     return [ln.lstrip("0123456789. -") for ln in lines]
 
@@ -65,22 +58,21 @@ def generate_story_pages(image_bytes: bytes, prompts: list[str]):
     img_part = types.Part.from_bytes(data=image_bytes, mime_type="image/png")
 
     for desc in prompts:
+        # Pixar-style + face match + square aspect ratio
         text_prompt = (
-            "Using the uploaded photo as reference, create a single-page, "
-            "full-color Pixar-style 3D cartoon illustration. "
-            "- Keep the same face shape, hair style, eye color, skin tone, and key features so "
-            "it unmistakably resembles the child. "
-            "- Use soft gradients, warm lighting, and stylized proportions typical of Pixar."
+            "Using the uploaded photo as reference, create a single-page, full-color Pixar-style 3D cartoon illustration. "
+            "- Keep the same face shape, hair style, eye color, skin tone, and key features so it unmistakably resembles the child. "
+            "- Use soft gradients, warm lighting, and stylized proportions typical of Pixar. "
+            "- Use a 1:1 square aspect ratio (e.g. 512×512). "
             f"Depict the child {desc}. Return only the image (no text)."
         )
 
         response = genai_client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.0-flash-exp",
             contents=[text_prompt, img_part],
-            config=types.GenerateContentConfig(response_modalities=["TEXT", "IMAGE"])
+            config=types.GenerateContentConfig(response_modalities=["TEXT","IMAGE"])
         )
 
-        # Pull out the first inline image
         for part in response.candidates[0].content.parts:
             if part.inline_data:
                 img = Image.open(BytesIO(part.inline_data.data))
@@ -89,21 +81,21 @@ def generate_story_pages(image_bytes: bytes, prompts: list[str]):
 
     return pages
 
-# ─── MAIN APP LOGIC ─────────────────────────────────────────────────────────────
+# ─── MAIN ───────────────────────────────────────────────────────────────────────
 if uploaded_file and name and (theme_choice in builtin or custom_theme):
-    actual_theme = custom_theme if theme_choice == "Custom" else theme_choice
+    theme = custom_theme if theme_choice == "Custom" else theme_choice
 
     if st.button("🖼️ Generate Story Pages"):
         with st.spinner("⏳ Generating scenarios…"):
-            prompts = generate_scenarios(actual_theme, name)
+            prompts = generate_scenarios(theme, name)
 
-        with st.spinner("🖌️ Rendering illustrations… this may take a moment"):
+        with st.spinner("🖌️ Rendering illustrations…"):
             raw = uploaded_file.read()
             story_pages = generate_story_pages(raw, prompts)
 
         st.balloons()
-        for i, (caption, img) in enumerate(story_pages, start=1):
-            st.subheader(f"Page {i}: {caption}")
+        for i, (cap, img) in enumerate(story_pages, start=1):
+            st.subheader(f"Page {i}: {cap}")
             st.image(img, use_container_width=True)
 else:
-    st.info("Please complete steps 1️⃣–3️⃣ above (and enter a custom theme if you chose ‘Custom’).")
+    st.info("Please complete steps 1–3 above (and enter a custom theme if you chose ‘Custom’).")
