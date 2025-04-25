@@ -11,7 +11,7 @@ import PIL
 # ─── PAGE SETUP ─────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Kids’ Visionboard Generator",
-    layout="centered",
+    layout="wide",
     page_icon="📖",
     initial_sidebar_state="collapsed"
 )
