@@ -120,10 +120,6 @@ def generate_story_pages(image_bytes: bytes, prompts: list[str]):
 pdfmetrics.registerFont(TTFont("Sniglet", "Sniglet-Regular.ttf"))
 pdfmetrics.registerFont(TTFont("Sniglet-Bold", "Sniglet-Bold.ttf"))
 
-if "story_pages" not in st.session_state:
-    st.session_state.story_pages = None
-
-
 def create_storybook_pdf(name: str, theme: str, story_pages: list[tuple[str, Image.Image]]):
     # ─── CONFIG ────────────────────────────────────────────────────────────────────
     # square size in points (600pt ≈ 8.3")
@@ -212,13 +208,9 @@ if uploaded_file and name and (theme_choice in builtin or custom_theme):
         with st.spinner("🖌️ Rendering illustrations…"):
             raw = uploaded_file.read()
             story_pages = generate_story_pages(raw, prompts)
-            st.session_state.story_pages = story_pages
 
         st.balloons()
         # 2️⃣ Display each page
-
-    pages = st.session_state.story_pages
-    if pages:
         for i, (caption, img) in enumerate(story_pages, start=1):
             st.subheader(f"Page {i}: {caption}")
             st.image(img, use_container_width=True)
