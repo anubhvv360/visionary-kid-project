@@ -8,11 +8,11 @@ from io import BytesIO
 
 # ─── PAGE SETUP ─────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Kids’ Storybook Generator",
+    page_title="Kids’ Visionboard Generator",
     layout="centered",
     page_icon="📖"
 )
-st.title("📖 Kids’ Storybook Generator")
+st.title("📖 Kids’ Visionboard Generator")
 
 # ─── CONFIG ─────────────────────────────────────────────────────────────────────
 genai_client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
