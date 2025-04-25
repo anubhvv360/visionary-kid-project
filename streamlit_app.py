@@ -80,9 +80,15 @@ def generate_story_pages(image_bytes: bytes, prompts: list[str]):
 
     for desc in prompts:
         text_prompt = (
-            "Create a single-page, full-color, pixar style illustration (keeping exact same face as reference) of "
-            f"the uploaded child doing: {desc}. Return only the image."
+        "Using the uploaded photo as a visual reference, generate a single-page, "
+        "full-color illustration in a Pixar-style 3D cartoon.  "
+        "- Keep the same face shape, hair style, eye color, skin tone, and key features so "
+        "that the character unmistakably resembles the child.  "
+        "- Use soft gradients, warm lighting, and stylized proportions (big eyes, rounded "
+        "cheeks) typical of Pixar films.  "
+        f"Depict the child {desc}.  Return only the image (no text or labels)."
         )
+
 
         # request both TEXT and IMAGE modalities
         response = genai_client.models.generate_content(
