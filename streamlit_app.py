@@ -80,7 +80,7 @@ def generate_story_pages(image_bytes: bytes, prompts: list[str]):
 
     for desc in prompts:
         text_prompt = (
-            "Create a single-page, full-color, cartoon-style illustration of "
+            "Create a single-page, full-color, pixar style illustration (keeping exact same face as reference) of "
             f"the uploaded child doing: {desc}. Return only the image."
         )
 
