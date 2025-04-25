@@ -7,14 +7,14 @@ from google.genai import types
 from PIL import Image
 from io import BytesIO
 
+# ─── PAGE SETUP ─────────────────────────────────────────────────────────────────
+st.set_page_config(page_title="Kids’ Storybook Generator", layout="centered", page_icon="🐥")
+st.title("📖 Kids’ Storybook Generator")
+
 # ─── CONFIG ─────────────────────────────────────────────────────────────────────
 # Make sure you’ve set your Gemini API key in the environment:
 #   export GOOGLE_API_KEY="YOUR_KEY"
 genai_client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
-
-# ─── PAGE SETUP ─────────────────────────────────────────────────────────────────
-st.set_page_config(page_title="Kids’ Storybook Generator", layout="centered", page_icon="🐥")
-st.title("📖 Kids’ Storybook Generator")
 
 # ─── USER INPUT ─────────────────────────────────────────────────────────────────
 uploaded_file = st.file_uploader(
