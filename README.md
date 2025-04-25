@@ -1,6 +1,8 @@
 # 📖 Kids’ Visionboard Generator
 
-A fun, interactive Streamlit app that turns a child’s photo and name into a personalized vision‐board storybook. Powered by Google’s Gemini multimodal models via the `google-genai` SDK, this tool:
+Get a personalised visionboard for your kid!
+
+A fun, interactive Streamlit app that turns a child’s photo and name into a personalised visionboard storybook. Powered by Google’s Gemini multimodal models via the `google-genai` SDK, this tool:
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://visionary-kid.streamlit.app/)
 
