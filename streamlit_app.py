@@ -91,9 +91,9 @@ def generate_story_pages(image_bytes: bytes, prompts: list[str]):
     for desc in prompts:
         text_prompt = (
             "Using the uploaded photo as reference, create a single-page, full-color "
-            "Pixar-style 3D cartoon illustration. Emphasise the focus on the background and certain objects to capture the theme. "
+            "Pixar-style 3D cartoon illustration. "
             "- Keep the same face shape, hair style, eye color, skin tone, and key features "
-            "so it unmistakably resembles the child. Avoid making the face fat, take other key facial/body features."
+            "so it unmistakably resembles the child."
             "- Use soft gradients, warm lighting, and stylized proportions typical of Pixar. "
             "- Use a 1:1 square aspect ratio (e.g. 512×512). "
             f"Depict the child {desc}. Return only the image (no text)."
