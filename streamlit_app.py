@@ -23,7 +23,9 @@ uploaded_file = st.file_uploader(
     type=["png", "jpg", "jpeg"]
 )
 
-st.caption("Images uploaded are not saved — the AI model only extracts features for this session.")
+st.caption(
+    "Images uploaded are not saved — the AI model only extracts features for this session."
+)
 
 name = st.text_input("2️⃣ What’s your kid’s name?", placeholder="e.g. Robert")
 
