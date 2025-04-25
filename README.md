@@ -1,6 +1,6 @@
 # 📖 Kids’ Visionboard Generator
 
-Get a personalised visionboard for your kid!
+Get a personalised visionboard for your kids! 😄🧿
 
 A fun, interactive Streamlit app that turns a child’s photo and name into a personalised visionboard storybook. Powered by Google’s Gemini multimodal models via the `google-genai` SDK, this tool:
 
