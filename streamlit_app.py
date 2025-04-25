@@ -23,6 +23,10 @@ if "saved_name" not in st.session_state:
     st.session_state.saved_name = ""
 if "saved_theme" not in st.session_state:
     st.session_state.saved_theme = ""
+if "last_name" not in st.session_state:
+    st.session_state.last_name = ""
+if "last_file_id" not in st.session_state:
+    st.session_state.last_file_id = None
 
 # ─── CONFIG ─────────────────────────────────────────────────────────────────────
 genai_client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
@@ -46,6 +50,17 @@ if theme_choice == "Custom":
         "✏️ Enter your custom theme",
         placeholder="e.g. Underwater Exploration"
     )
+
+if name and name != st.session_state.last_name:
+    st.toast("That's a lovely name! 😍")
+    st.session_state.last_name = name
+
+if uploaded_file is not None:
+    current_file_id = f"{uploaded_file.name}-{uploaded_file.size}"
+    if current_file_id != st.session_state.last_file_id:
+        st.toast("So cute!!! Can't wait to draw a visionboard! 🧿")
+        st.session_state.last_file_id = current_file_id
+
 
 # ─── RESET STATE ON NEW UPLOAD ───────────────────────────────────────────────────
 if uploaded_file is not None:
