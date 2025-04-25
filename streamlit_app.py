@@ -5,6 +5,8 @@ from google import genai
 from google.genai import types
 from PIL import Image
 from io import BytesIO
+from langchain.chat_models import ChatGoogleGenerativeAI
+from langchain.schema import HumanMessage
 
 # ─── PAGE SETUP ─────────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -15,9 +17,12 @@ st.set_page_config(
 st.title("📖 Kids’ Storybook Generator")
 
 # ─── CONFIG ─────────────────────────────────────────────────────────────────────
-# Make sure .streamlit/secrets.toml contains:
-# GOOGLE_API_KEY = "your_api_key_here"
 genai_client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
+# LangChain wrapper for text → scenarios
+chat = ChatGoogleGenerativeAI(
+    model_name="gemini-2.0-flash",
+    api_key=st.secrets["GOOGLE_API_KEY"]
+)
 
 # ─── USER INPUT ─────────────────────────────────────────────────────────────────
 uploaded_file = st.file_uploader(
@@ -27,97 +32,74 @@ uploaded_file = st.file_uploader(
 )
 name = st.text_input("2️⃣ What’s your kid’s name?", placeholder="e.g. Robert")
 
-# ─── DEFINE BUILT-IN THEMES ─────────────────────────────────────────────────────
-DEFAULT_THEMES = {
-    "Different Professions": [
-        f"{name} the doctor",
-        f"{name} the pilot",
-        f"{name} the firefighter",
-        f"{name} the scientist",
-    ],
-    "Value-Based Adventures": [
-        f"{name} cleaning their play area",
-        f"{name} helping an elder cross the street",
-        f"{name} sharing toys with a friend",
-    ],
-    "Cultural Landmarks": [
-        f"{name} at the Pyramids of Egypt",
-        f"{name} at the Taj Mahal, India",
-        f"{name} at the Eiffel Tower, France",
-    ],
-}
-
 # ─── THEME SELECTION ────────────────────────────────────────────────────────────
-theme_options = [
-    "Select a theme…",
-    *DEFAULT_THEMES.keys(),
-    "Custom"
-]
-theme_choice = st.selectbox("3️⃣ Choose a story theme", theme_options)
+builtin = ["Different Professions", "Value-Based Adventures", "Cultural Landmarks"]
+theme_choice = st.selectbox(
+    "3️⃣ Choose a story theme",
+    ["Select…"] + builtin + ["Custom"]
+)
 
-# ─── CUSTOM PROMPTS ─────────────────────────────────────────────────────────────
+custom_theme = ""
 if theme_choice == "Custom":
-    prompts_raw = st.text_area(
-        "🔤 Enter your own prompts (comma separated)",
-        placeholder=(
-            "e.g. Robert as an astronaut, "
-            "Robert exploring Mars, "
-            "Robert baking a cake"
-        ),
-        height=100,
+    custom_theme = st.text_input(
+        "✏️ Enter your custom theme",
+        placeholder="e.g. Underwater Exploration"
     )
-    prompts = [p.strip() for p in prompts_raw.split(",") if p.strip()]
-elif theme_choice in DEFAULT_THEMES:
-    prompts = DEFAULT_THEMES[theme_choice]
-else:
-    prompts = []
+
+# ─── SCENARIO GENERATOR ──────────────────────────────────────────────────────────
+def generate_scenarios(theme: str, name: str, count: int = 8) -> list[str]:
+    prompt = (
+        f"Please list {count} concise, one-phrase story scenarios for a child named {name} "
+        f"under the theme “{theme}”. Each scenario should look like “{name} as the pilot in a biplane”."
+    )
+    # LangChain call into Gemini text
+    resp = chat([HumanMessage(content=prompt)])
+    # split & clean
+    lines = [l.strip() for l in resp.content.splitlines() if l.strip()]
+    # remove numbers/bullets
+    return [l.lstrip("0123456789. -") for l in lines]
 
 # ─── IMAGE-GENERATION ────────────────────────────────────────────────────────────
 def generate_story_pages(image_bytes: bytes, prompts: list[str]):
     pages = []
-    # wrap bytes so Gemini sees the face
     img_part = types.Part.from_bytes(data=image_bytes, mime_type="image/png")
-
     for desc in prompts:
+        # Pixar-style + face matching
         text_prompt = (
-        "Using the uploaded photo as a visual reference, generate a single-page, "
-        "full-color illustration in a Pixar-style 3D cartoon.  "
-        "- Keep the same face shape, hair style, eye color, skin tone, and key features so "
-        "that the character unmistakably resembles the child.  "
-        "- Use soft gradients, warm lighting, and stylized proportions (big eyes, rounded "
-        "cheeks) typical of Pixar films.  "
-        f"Depict the child {desc}.  Return only the image (no text or labels)."
+            "Using the uploaded photo as reference, create a single-page, "
+            "full-color Pixar-style 3D cartoon illustration. "
+            "- Keep the same face shape, hair style, eye color, skin tone, and key features "
+            "so it unmistakably resembles the child. "
+            "- Use soft gradients, warm lighting, and stylized proportions typical of Pixar. "
+            f"Depict the child {desc}. Return only the image."
         )
-
-
-        # request both TEXT and IMAGE modalities
         response = genai_client.models.generate_content(
-            model="gemini-2.0-flash-exp",
+            model="gemini-2.0-flash",
             contents=[text_prompt, img_part],
-            config=types.GenerateContentConfig(
-                response_modalities=["TEXT", "IMAGE"]
-            )
+            config=types.GenerateContentConfig(response_modalities=["TEXT","IMAGE"])
         )
-
-        # discard any text and pull out the first inline image
+        # extract the first inline image
         for part in response.candidates[0].content.parts:
             if part.inline_data:
                 img = Image.open(BytesIO(part.inline_data.data))
                 pages.append((desc, img))
                 break
-
     return pages
 
-# ─── RENDER ─────────────────────────────────────────────────────────────────────
-if uploaded_file and name and prompts:
+# ─── MAIN ───────────────────────────────────────────────────────────────────────
+if uploaded_file and name and (theme_choice in builtin or custom_theme):
+    actual_theme = custom_theme if theme_choice == "Custom" else theme_choice
+
     if st.button("🖼️ Generate Story Pages"):
-        with st.spinner("Generating images… this may take a minute"):
+        with st.spinner("Generating scenarios…"):
+            prompts = generate_scenarios(actual_theme, name)
+        with st.spinner("Rendering illustrations… this may take a moment"):
             raw = uploaded_file.read()
             story_pages = generate_story_pages(raw, prompts)
 
         st.balloons()
-        for idx, (caption, img) in enumerate(story_pages, start=1):
-            st.subheader(f"Page {idx}: {caption}")
-            st.image(img, use_column_width=True)
+        for i, (cap, img) in enumerate(story_pages, start=1):
+            st.subheader(f"Page {i}: {cap}")
+            st.image(img, use_container_width=True)
 else:
-    st.info("Please complete steps 1️⃣–3️⃣ above before generating.")
+    st.info("Complete steps 1️⃣–3️⃣ above (and enter a custom theme if you chose ‘Custom’).")
