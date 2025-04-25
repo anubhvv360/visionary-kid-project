@@ -30,7 +30,7 @@ uploaded_file = st.file_uploader(
     type=["png", "jpg", "jpeg"],
     help="We'll use this as the face reference for all drawings."
 )
-name = st.text_input("2️⃣ What’s your kid’s name?", placeholder="e.g. Robert")
+name = st.text_input("2️⃣ What’s your kid’s name?", placeholder="e.g. Bunny")
 
 # ─── THEME SELECTION ────────────────────────────────────────────────────────────
 builtin = ["Different Professions", "Value-Based Adventures", "Cultural Landmarks"]
@@ -71,7 +71,7 @@ def generate_story_pages(image_bytes: bytes, prompts: list[str]):
             "- Keep the same face shape, hair style, eye color, skin tone, and key features "
             "so it unmistakably resembles the child. "
             "- Use soft gradients, warm lighting, and stylized proportions typical of Pixar. "
-            f"Depict the child {desc}. Return only the image."
+            f"Depict the child {desc}. Return only the image. All images in the same aspect ratio."
         )
         response = genai_client.models.generate_content(
             model="gemini-2.0-flash",
