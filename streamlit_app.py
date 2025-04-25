@@ -8,7 +8,12 @@ from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
+from reportlab.lib.pagesizes import portrait
 from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from io import BytesIO
+import textwrap
 
 
 # ─── PAGE SETUP ─────────────────────────────────────────────────────────────────
@@ -109,82 +114,88 @@ def generate_story_pages(image_bytes: bytes, prompts: list[str]):
 
     return pages
 
+
+
+# ─── REGISTER Sniglet FONT ────────────────────────────────────────────────────────
+pdfmetrics.registerFont(TTFont("Sniglet", "Sniglet-Regular.ttf"))
+pdfmetrics.registerFont(TTFont("Sniglet-Bold", "Sniglet-Bold.ttf"))
+
 def create_storybook_pdf(name: str, theme: str, story_pages: list[tuple[str, Image.Image]]):
-    """
-    Returns a BytesIO buffer containing a ready-to-print PDF
-    with a cover, story pages, and back cover.
-    """
-    # Map themes to soft background colors
-    theme_colors = {
-        "Different Professions": colors.lightgrey,
-        "Value-Based Adventures": colors.lightgreen,
-        "Cultural Landmarks": colors.lightgoldenrodyellow,
+    # ─── CONFIG ────────────────────────────────────────────────────────────────────
+    # square size in points (600pt ≈ 8.3")
+    size = 600
+    bg_colors = {
+        "Different Professions": colors.HexColor("#FF7F50"),       # coral
+        "Value-Based Adventures": colors.HexColor("#32CD32"),      # lime green
+        "Cultural Landmarks": colors.HexColor("#1E90FF"),          # dodger blue
     }
-    bg = theme_colors.get(theme, colors.lightpink)
+    cover_bg = bg_colors.get(theme, colors.HexColor("#FF6F91"))    # fallback pink
 
     buf = BytesIO()
-    c = canvas.Canvas(buf, pagesize=A4)
-    w, h = A4
-    margin = 40
+    c = canvas.Canvas(buf, pagesize=(size, size))
+    w, h = size, size
+    margin = 30
 
-    # ─── Cover Page ────────────────────────────────────────────────────────────────
-    c.setFillColor(bg)
+    # ─── COVER ─────────────────────────────────────────────────────────────────────
+    c.setFillColor(cover_bg)
     c.rect(0, 0, w, h, stroke=0, fill=1)
 
-    c.setFont("Helvetica-Bold", 36)
+    title = f"{name}’s {theme} Storybook"
+    lines = textwrap.wrap(title, width=18)
+    y_start = h * 0.75
+    c.setFont("Sniglet-Bold", 48)
     c.setFillColor(colors.white)
-    c.drawCentredString(w/2, h*0.65, f"{name}’s {theme} Storybook")
+    for i, line in enumerate(lines):
+        c.drawCentredString(w/2, y_start - i*60, line)
 
-    # Optionally, show a thumbnail of the first illustration
+    # thumbnail of first page
     if story_pages:
         _, first_img = story_pages[0]
-        thumb_buf = BytesIO()
-        first_img.save(thumb_buf, format="PNG")
-        thumb_buf.seek(0)
-        reader = ImageReader(thumb_buf)
-        # Draw at half width, centered
+        thumb = BytesIO()
+        first_img.save(thumb, "PNG")
+        thumb.seek(0)
+        reader = ImageReader(thumb)
         tw = w * 0.5
-        th = tw
-        c.drawImage(reader, (w-tw)/2, h*0.3, tw, th, preserveAspectRatio=True)
+        c.drawImage(reader, (w-tw)/2, h*0.35, tw, tw, preserveAspectRatio=True)
 
     c.showPage()
 
-    # ─── Story Pages ───────────────────────────────────────────────────────────────
+    # ─── CONTENT PAGES ────────────────────────────────────────────────────────────
     for idx, (caption, img) in enumerate(story_pages, start=1):
-        # white background
-        c.setFillColor(colors.white)
+        # vibrant background
+        c.setFillColor(colors.whitesmoke)
         c.rect(0, 0, w, h, stroke=0, fill=1)
 
-        # draw the square image centered, leaving room for caption
+        # draw the square image (80% of page width)
         img_buf = BytesIO()
-        img.convert("RGB").save(img_buf, format="PNG")
+        img.convert("RGB").save(img_buf, "PNG")
         img_buf.seek(0)
         reader = ImageReader(img_buf)
+        img_size = w * 0.8
+        x = (w - img_size)/2
+        y = (h - img_size)/2 + 30  # leave room below
+        c.drawImage(reader, x, y, img_size, img_size, preserveAspectRatio=True)
 
-        # compute size: fit into top 80% of page
-        max_size = min(w - 2*margin, h*0.8 - margin)
-        img_x = (w - max_size) / 2
-        img_y = h*0.2
-        c.drawImage(reader, img_x, img_y, max_size, max_size, preserveAspectRatio=True)
-
-        # caption area
-        c.setFont("Helvetica-Oblique", 14)
+        # caption below image
+        c.setFont("Sniglet", 18)
         c.setFillColor(colors.darkblue)
-        c.drawCentredString(w/2, img_y - 20, caption)
+        c.drawCentredString(w/2, y - 25, caption)
 
         c.showPage()
 
-    # ─── Back Cover ────────────────────────────────────────────────────────────────
-    c.setFillColor(bg)
+    # ─── BACK COVER ───────────────────────────────────────────────────────────────
+    back_bg = colors.HexColor("#2F4F4F")  # dark slate gray
+    c.setFillColor(back_bg)
     c.rect(0, 0, w, h, stroke=0, fill=1)
-    c.setFont("Helvetica", 16)
-    c.setFillColor(colors.white)
+    c.setFont("Sniglet-Bold", 24)
+    c.setFillColor(colors.whitesmoke)
     c.drawCentredString(w/2, h/2, "Made with ❤️ by Anubhav Verma")
     c.showPage()
 
     c.save()
     buf.seek(0)
     return buf
+
 
 # ─── MAIN LOGIC ─────────────────────────────────────────────────────────────────
 if uploaded_file and name and (theme_choice in builtin or custom_theme):
