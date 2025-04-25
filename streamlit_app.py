@@ -211,8 +211,6 @@ if uploaded_file and name and (theme_choice in builtin or custom_theme):
 
         st.balloons()
         # 2️⃣ Display each page
-
-     
         for i, (caption, img) in enumerate(story_pages, start=1):
             st.subheader(f"Page {i}: {caption}")
             st.image(img, use_container_width=True)
