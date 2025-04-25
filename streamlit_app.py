@@ -133,14 +133,14 @@ if uploaded_file and name and (theme_choice in builtin or custom_theme):
 pages = st.session_state.story_pages
 if pages:
     for i, (caption, img) in enumerate(pages, start=1):
-        st.subheader(f"Page {i}: {caption}")
+        st.subheader(f"{caption}")
         st.image(img, use_container_width=True)
 
         # prepare PNG bytes
         buf = BytesIO()
         img.save(buf, format="PNG")
         st.download_button(
-            label=f"⬇️ Download Page {i}",
+            label=f"⬇️ Download",
             data=buf.getvalue(),
             file_name=f"{st.session_state.saved_name}_page_{i}.png",
             mime="image/png",
