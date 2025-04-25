@@ -15,7 +15,7 @@ st.set_page_config(
 st.title("📖 Kids’ Storybook Generator")
 
 # ─── CONFIG ─────────────────────────────────────────────────────────────────────
-# Make sure your .streamlit/secrets.toml contains:
+# Make sure .streamlit/secrets.toml contains:
 # GOOGLE_API_KEY = "your_api_key_here"
 genai_client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
 
@@ -55,7 +55,7 @@ theme_options = [
 ]
 theme_choice = st.selectbox("3️⃣ Choose a story theme", theme_options)
 
-# If the user picks “Custom”, give them a free-text box
+# ─── CUSTOM PROMPTS ─────────────────────────────────────────────────────────────
 if theme_choice == "Custom":
     prompts_raw = st.text_area(
         "🔤 Enter your own prompts (comma separated)",
@@ -75,6 +75,7 @@ else:
 # ─── IMAGE-GENERATION ────────────────────────────────────────────────────────────
 def generate_story_pages(image_bytes: bytes, prompts: list[str]):
     pages = []
+    # wrap bytes so Gemini sees the face
     img_part = types.Part.from_bytes(data=image_bytes, mime_type="image/png")
 
     for desc in prompts:
@@ -83,13 +84,16 @@ def generate_story_pages(image_bytes: bytes, prompts: list[str]):
             f"the uploaded child doing: {desc}. Return only the image."
         )
 
-        # ← Note the model name change and modal casing
+        # request both TEXT and IMAGE modalities
         response = genai_client.models.generate_content(
             model="gemini-2.0-flash-exp",
             contents=[text_prompt, img_part],
-            config=types.GenerateContentConfig(response_modalities=["Image"])
+            config=types.GenerateContentConfig(
+                response_modalities=["TEXT", "IMAGE"]
+            )
         )
 
+        # discard any text and pull out the first inline image
         for part in response.candidates[0].content.parts:
             if part.inline_data:
                 img = Image.open(BytesIO(part.inline_data.data))
@@ -101,7 +105,7 @@ def generate_story_pages(image_bytes: bytes, prompts: list[str]):
 # ─── RENDER ─────────────────────────────────────────────────────────────────────
 if uploaded_file and name and prompts:
     if st.button("🖼️ Generate Story Pages"):
-        with st.spinner("Generating… this may take a minute"):
+        with st.spinner("Generating images… this may take a minute"):
             raw = uploaded_file.read()
             story_pages = generate_story_pages(raw, prompts)
 
@@ -109,6 +113,5 @@ if uploaded_file and name and prompts:
         for idx, (caption, img) in enumerate(story_pages, start=1):
             st.subheader(f"Page {idx}: {caption}")
             st.image(img, use_column_width=True)
-
 else:
     st.info("Please complete steps 1️⃣–3️⃣ above before generating.")
