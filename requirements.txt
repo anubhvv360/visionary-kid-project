@@ -3,3 +3,4 @@ google-generativeai>=0.8.5
 Pillow
 google-genai>=1.12.1
 langchain
+reportlab
