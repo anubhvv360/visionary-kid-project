@@ -75,22 +75,21 @@ else:
 # ─── IMAGE-GENERATION ────────────────────────────────────────────────────────────
 def generate_story_pages(image_bytes: bytes, prompts: list[str]):
     pages = []
-    # keyword-only: pass the bytes as `data` plus mime_type
     img_part = types.Part.from_bytes(data=image_bytes, mime_type="image/png")
 
     for desc in prompts:
         text_prompt = (
             "Create a single-page, full-color, cartoon-style illustration of "
-            "the uploaded child doing: " + desc + ". Return only the image."
+            f"the uploaded child doing: {desc}. Return only the image."
         )
 
+        # ← Note the model name change and modal casing
         response = genai_client.models.generate_content(
-            model="gemini-2.0-flash-exp-image-generation",
+            model="gemini-2.0-flash-exp",
             contents=[text_prompt, img_part],
-            config=types.GenerateContentConfig(response_modalities=["IMAGE"])
+            config=types.GenerateContentConfig(response_modalities=["Image"])
         )
 
-        # extract the first inline image
         for part in response.candidates[0].content.parts:
             if part.inline_data:
                 img = Image.open(BytesIO(part.inline_data.data))
