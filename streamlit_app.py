@@ -78,7 +78,7 @@ def generate_scenarios(theme: str, name: str, count: int = 8) -> list[str]:
     )
 
     resp = genai_client.models.generate_content(
-        model="gemini-2.0-flash-exp",
+        model="models/gemini-2.5-flash-image-preview",#"gemini-2.0-flash-exp",
         contents=[prompt],
         config=types.GenerateContentConfig(response_modalities=["TEXT"])
     )
