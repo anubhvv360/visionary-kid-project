@@ -94,18 +94,22 @@ def generate_story_pages(image_bytes: bytes, prompts: list[str]):
     for desc in prompts:
         text_prompt = (
             "Using the uploaded photo as reference, create a single-page, full-color "
-            "Pixar-style 3D cartoon illustration. "
+            "Pixar-style 3D cartoon illustration in 1024x1024 resolution. "
             "- Keep the same face shape, hair style, eye color, skin tone, and key features "
             "so it unmistakably resembles the child."
             "- Use soft gradients, warm lighting, and stylized proportions typical of Pixar. "
-            "- Use a 1:1 square aspect ratio (e.g. 512×512). "
+            "- Ensure high quality, detailed rendering suitable for printing. "
             f"Depict the child {desc}. Return only the image (no text)."
         )
 
         response = genai_client.models.generate_content(
             model="gemini-2.5-flash-image-preview",#"gemini-2.0-flash-exp",
             contents=[text_prompt, img_part],
-            config=types.GenerateContentConfig(response_modalities=["TEXT", "IMAGE"])
+            config=types.GenerateContentConfig(
+                response_modalities=["TEXT", "IMAGE"],
+                temperature=0.7,
+                max_output_tokens=8192
+            )
         )
 
         for part in response.candidates[0].content.parts:
